@@ -1,4 +1,22 @@
-library(shiny) 
+# Install the required packages if they are not already installed
+if (!requireNamespace("shiny", quietly = TRUE)) install.packages("shiny")
+if (!requireNamespace("shinydashboard", quietly = TRUE)) install.packages("shinydashboard")
+if (!requireNamespace("DT", quietly = TRUE)) install.packages("DT")
+if (!requireNamespace("readxl", quietly = TRUE)) install.packages("readxl")
+if (!requireNamespace("factoextra", quietly = TRUE)) install.packages("factoextra")
+if (!requireNamespace("ggplot2", quietly = TRUE)) install.packages("ggplot2")
+if (!requireNamespace("openxlsx", quietly = TRUE)) install.packages("openxlsx")
+if (!requireNamespace("shinycssloaders", quietly = TRUE)) install.packages("shinycssloaders")
+if (!requireNamespace("dplyr", quietly = TRUE)) install.packages("dplyr")
+if (!requireNamespace("mFilter", quietly = TRUE)) install.packages("mFilter")
+if (!requireNamespace("ConvergenceClubs", quietly = TRUE)) install.packages("ConvergenceClubs")
+if (!requireNamespace("shinyjqui", quietly = TRUE)) install.packages("shinyjqui")
+if (!requireNamespace("caret", quietly = TRUE)) install.packages("caret")
+if (!requireNamespace("xgboost", quietly = TRUE)) install.packages("xgboost")
+if (!requireNamespace("cluster", quietly = TRUE)) install.packages("cluster")
+
+# Load the necessary libraries
+library(shiny)
 library(shinydashboard)
 library(DT)
 library(readxl)
@@ -14,7 +32,10 @@ library(caret)
 library(xgboost)
 library(cluster)
 
-# Define UI
+
+
+
+# UI
 ui <- dashboardPage(
   dashboardHeader(title = "Kluster it!"),
   dashboardSidebar(
@@ -524,6 +545,8 @@ ui <- dashboardPage(
   )
 )
 
+
+# Server
 server <- function(input, output, session) {
   # Reactive value to store the separator
   separator <- reactiveVal(",")
@@ -601,13 +624,8 @@ footer = tagList(
     ))
   })
   
-  observeEvent(input$convert_btn, {
-    req(input$var_to_convert)
-    df <- read_file()
-    df[[input$var_to_convert]] <- suppressWarnings(as.numeric(as.character(df[[input$var_to_convert]])))
-    read_file(df)
-  })
   
+  # Update tab items after changing separator
   observeEvent(input$ok, {
     separator(input$separator_choice)
     removeModal()
@@ -615,28 +633,33 @@ footer = tagList(
     read_file()
   })
   
+  # Retry_read if separator is changed
   observeEvent(input$retry_read, {
     separator(input$separator_choice)
     removeModal()
     read_file()
   })
   
+  # Update of tab items in general chek
   observeEvent(input$file1, {
     updateTabItems(session, "tabs", "general_check")
     df <- read_file()
     reactiveData(na.omit(df))
   })
   
+  #Render datatable to check the data (of file read)
   output$check_data <- renderDataTable({
     datatable(read_file(), options = list(scrollX = TRUE))
   })
   
+  # Remove NAs of df
   observe({
     req(input$file1)
     df <- read_file()
-    reactiveData(df)
+    reactiveData(na.omit(df))
   })
   
+  # Apply change of class
   output$dataTypes <- renderDT({
     df <- reactiveData()
     types_df <- data.frame(
@@ -645,6 +668,7 @@ footer = tagList(
     datatable(types_df, options = list(paging = FALSE, searching = FALSE, info = FALSE, autoWidth = TRUE))
   })
   
+  # Render UI of modification of variable types
   output$modify_types_ui <- renderUI({
     df <- reactiveData()
     varNames <- names(df)
@@ -662,6 +686,7 @@ footer = tagList(
     )
   })
   
+  # Apply changes of variable type
   observeEvent(input$apply_changes, {
     req(input$file1)
     df <- reactiveData()
@@ -690,10 +715,12 @@ footer = tagList(
     }
   })
   
+  # Render datatable to check the data (of data after saving it or applying changes)
   output$check_data <- renderDT({
     datatable(reactiveData(), options = list(autoWidth = TRUE, scrollX = TRUE, pageLength = 5))
   })
-  
+   
+  # Update numerical variables to show in selection
   observe({
     df <- reactiveData()
     req(df)
@@ -702,6 +729,7 @@ footer = tagList(
     updateSelectInput(session, "analysis_vars", choices = numeric_vars)
   })
   
+  # Find optimum k for kmeans
   observeEvent(input$run_analysis, {
     data <- reactiveData()
     req(data)
@@ -719,17 +747,20 @@ footer = tagList(
     
     reactiveData(data)
     
+    # Render silhouette plot
     output$silhouette_plot <- renderPlot({
       fviz_nbclust(data[, selected_vars, drop = FALSE], kmeans, method = "silhouette") +
         labs(subtitle = "Silhouette method")
     })
     
+    # Render elbow pot
     output$elbow_plot <- renderPlot({
       fviz_nbclust(data[, selected_vars, drop = FALSE], kmeans, method = "wss") +
         labs(subtitle = "Elbow method")
     })
   })
   
+  # Update selection of ID, numeric variables to analyze, X var and Y var to plot
   observe({
     df <- reactiveData()
     req(df)
@@ -739,7 +770,9 @@ footer = tagList(
     updateSelectInput(session, "x_var", choices = numeric_vars)
     updateSelectInput(session, "y_var", choices = numeric_vars)
   })
+   
   
+  # Run KMeans analysis
   observeEvent(input$run_analysis_analysis, {
     data <- reactiveData()
     req(data)
@@ -766,10 +799,12 @@ footer = tagList(
       
       reactiveData(data)
       
+      # Datatable showing centroids results (with centroids not being scaled even if the the clusters calculation was based in scaled data)
       output$cluster_results <- renderDT({
         datatable(aggregated_data, options = list(autoWidth = FALSE, scrollX = TRUE, pageLength = 5))
       })
       
+      # Plot cluster plot in PCA or ggplot selecting x and y variable
       output$cluster_plot <- renderPlot({
         if (input$plot_type == "pca") {
           fviz_cluster(kmeans_result, data = data_for_clustering,
@@ -790,6 +825,7 @@ footer = tagList(
     })
   })
   
+  # Show only numeric variables to select, and option to create new ID or use existing one
   observe({
     df <- reactiveData()
     req(df)
@@ -798,6 +834,7 @@ footer = tagList(
     updateSelectInput(session, "analysis_vars_analysis", choices = numeric_vars)
   })
   
+  # Download cluster results
   output$download_data <- downloadHandler(
     filename = function() {
       paste("cluster-results-", format(Sys.time(), "%Y-%m-%d-%H%M"), ".csv", sep = "")
@@ -808,6 +845,7 @@ footer = tagList(
     }
   )
   
+  # Show order of the columns (CC preparation)
   output$reorder_ui <- renderUI({
     df <- reactiveData()
     req(df)
@@ -815,6 +853,7 @@ footer = tagList(
     orderInput("column_order", "", items = colnames, as.character = TRUE)
   })
   
+  # Function to apply reorder (CC preparation)
   observeEvent(input$apply_reorder, {
     df <- reactiveData()
     req(df)
@@ -822,6 +861,7 @@ footer = tagList(
     reactiveData(df[new_order])
   })
   
+  # Show rename part in boxes of 6 per row (CC preparation)
   output$rename_ui <- renderUI({
     df <- reactiveData()
     req(df)
@@ -842,6 +882,7 @@ footer = tagList(
     )
   })
   
+  # Apply rename (in CC preparation)
   observeEvent(input$apply_rename, {
     df <- reactiveData()
     req(df)
@@ -850,9 +891,10 @@ footer = tagList(
       input[[paste0("rename_", col)]]
     })
     colnames(df) <- new_names
-    reactiveData(df)
+    reactiveData(na.omit(df))
   })
   
+  # Preview data for CC preparation
   output$preview_data <- renderDT({
     datatable(reactiveData(), options = list(autoWidth = TRUE, scrollX = TRUE, pageLength = 5))
   })
@@ -861,7 +903,7 @@ footer = tagList(
   output$year_slider_ui <- renderUI({
     df <- reactiveData()
     req(df)
-    year_columns <- as.numeric(names(df)[-1])  # Assuming the first column is ID and the rest are years
+    year_columns <- as.numeric(names(df)[-1])  # We assume the ID is the first variable (it is specified in methodologies and instructions)
     min_year <- min(year_columns, na.rm = TRUE)
     max_year <- max(year_columns, na.rm = TRUE)
     
@@ -869,6 +911,7 @@ footer = tagList(
                 min = min_year, max = max_year, value = c(min_year, max_year), sep = "")
   })
   
+  # Run club convergence analysis
   observeEvent(input$run_club_analysis, {
     req(input$year_range)
     data <- reactiveData()
@@ -892,10 +935,12 @@ footer = tagList(
     
     clubs <- findClubs(filteredData, dataCols = dataCols, unit_names = 1, refCol = end_year - start_year + 2, time_trim = 1/3, cstar = 0, HACmethod = 'FQSB')
     
+    # Print information about clubs
     output$print_clubs <- renderPrint({
       print(clubs)
     })
     
+    # Plot club convergence final clubs (all or specific)
     output$plot_clubs <- renderPlot({
       if (input$view_choice == "all") {
         plot(clubs, legend = FALSE, plot_args = list(
@@ -916,6 +961,7 @@ footer = tagList(
       }
     })
     
+    # Print general beta convergence results
     output$estimate_mod_result <- renderPrint({
       estimate_mod_result <- round(estimateMod(H, time_trim = 1/3, HACmethod = "FQSB"), 3)
       print(estimate_mod_result)
@@ -930,6 +976,7 @@ footer = tagList(
     orderInput("column_order_ik", "", items = colnames, as.character = TRUE)
   })
   
+  # Reorder in IK preparation
   observeEvent(input$apply_reorder_ik, {
     df <- reactiveData()
     req(df)
@@ -937,6 +984,7 @@ footer = tagList(
     reactiveData(df[new_order])
   })
   
+  # Show rename option in rows of six boxes each
   output$rename_ui_ik <- renderUI({
     df <- reactiveData()
     req(df)
@@ -957,6 +1005,7 @@ footer = tagList(
     )
   })
   
+  # Function to apply rename
   observeEvent(input$apply_rename_ik, {
     df <- reactiveData()
     req(df)
@@ -965,19 +1014,22 @@ footer = tagList(
       input[[paste0("rename_ik_", col)]]
     })
     colnames(df) <- new_names
-    reactiveData(df)
+    reactiveData(na.omit(df))
   })
   
+  # Preview data on Index Klub preparation
   output$preview_data_ik <- renderDT({
     datatable(reactiveData(), options = list(autoWidth = TRUE, scrollX = TRUE, pageLength = 5))
   })
   
+  # Select ID in Coefficient Klub Index
   observe({
     df <- reactiveData()
     req(df)
     updateSelectInput(session, "id_var", choices = names(df))
   })
   
+  # Add prefix
   observeEvent(input$add_prefix, {
     current_prefixes <- prefixes()
     new_prefix <- input$prefix_input
@@ -987,21 +1039,24 @@ footer = tagList(
     updateTextInput(session, "prefix_input", value = "")
   })
   
+  # Remove prefixes (all)
   observeEvent(input$remove_all_prefixes, {
     prefixes(list())
   })
   
+  # Show prefixes added
   output$prefixes_ui <- renderUI({
     prefix_list <- prefixes()
     if (length(prefix_list) > 0) {
       tagList(
-        p(paste(prefix_list, collapse = ", "), style = "font-size: 25px; margin-top: 24px;")  # Adjust the font-size and margin-top as needed
+        p(paste(prefix_list, collapse = ", "), style = "font-size: 25px; margin-top: 24px;")  
       )
     } else {
-      p("No prefixes added", style = "font-size: 25px; margin-top: 24px;")  # Adjust the font-size and margin-top as needed
+      p("No prefixes added", style = "font-size: 25px; margin-top: 24px;") 
     }
   })
   
+  # Action after running index analysis to get coefficients
   observeEvent(input$run_index_analysis, {
     data <- reactiveData()
     req(data)
@@ -1041,19 +1096,19 @@ footer = tagList(
     # Manually create the average columns for each prefix
     for (prefix in prefix_list) {
       col_name <- paste0("mean_", prefix)
-      merged_df <- merged_df %>%
+      merged_df <- merged_df |> 
         mutate(!!sym(col_name) := rowMeans(select(merged_df, starts_with(prefix)), na.rm = TRUE))
     }
     
     set.seed(123)
     
     # Select only the ID column and the new mean columns
-    df_avg <- merged_df %>%
+    df_avg <- merged_df |> 
       select(id_var, starts_with("mean_"))
     
     df_avgkmeans <- cbind(df_avg, cluster = kmeans_result$cluster)
     
-    xgboostdf <- df_avgkmeans %>% select(-!!sym(id_var))
+    xgboostdf <- df_avgkmeans |>  select(-!!sym(id_var))
     
     grid_tune <- expand.grid(
       nrounds = c(50, 100, 200), #number of trees
@@ -1063,7 +1118,7 @@ footer = tagList(
       colsample_bytree = 1, # c(0.4, 0.6, 0.8, 1.0) subsample ratio of columns for tree
       min_child_weight = 1, # c(1,2,3) # the larger, the more conservative the model
       subsample = 1 # c(0.5, 0.75, 1.0) # used to prevent overfitting by sampling X% training
-    )
+    ) # for 'better' models play with the ranges as shown in the comments :)
     
     train_control <- trainControl(method = "cv",
                                   number = 3,
@@ -1100,16 +1155,19 @@ footer = tagList(
     
     xgb.pred <- predict(xgb_model, xgboostdf[,-which(names(xgboostdf) == "cluster")])
     
+    # Show datatable (option used in debugging part of the app)
     output$index_cluster_results <- renderDT({
       datatable(df_avgkmeans, options = list(autoWidth = FALSE, scrollX = TRUE, pageLength = 5))
     })
     
+    # Plot importance plot
     output$importance_plot <- renderPlot({
       importance_matrix <- xgb.importance(model = xgb_model$finalModel)
       xgb.plot.importance(importance_matrix = importance_matrix)
     })
   })
-  
+   
+  # Show column names to select ID for Index Club
   observe({
     df <- reactiveData()
     req(df)
@@ -1128,6 +1186,7 @@ footer = tagList(
     updateTextInput(session, "prefix_input_indexclub", value = "")
   })
   
+  # Remove specific prefix
   observeEvent(input$remove_prefix_indexclub, {
     current_prefixes <- prefixes_indexclub()
     prefix_to_remove <- input$prefix_input_indexclub
@@ -1136,6 +1195,7 @@ footer = tagList(
     updateTextInput(session, "prefix_input_indexclub", value = "")
   })
   
+  # Show prefixes added
   output$prefixes_ui_indexclub <- renderUI({
     prefix_list <- prefixes_indexclub()
     if (length(prefix_list) > 0) {
@@ -1166,6 +1226,7 @@ footer = tagList(
     }
   })
   
+  # Events after "click" run in Klub Index
   observeEvent(input$run_index_club_analysis, {
     data <- reactiveData()
     req(data)
@@ -1207,6 +1268,7 @@ footer = tagList(
       paste0(prefix, start_year:end_year)
     }))
     
+    # If there are no missing years notify the user
     missing_columns <- setdiff(year_columns, colnames(data))
     if(length(missing_columns) > 0) {
       showNotification(paste("Missing columns in the data:", paste(missing_columns, collapse = ", ")), type = "error")
@@ -1218,10 +1280,10 @@ footer = tagList(
       for (prefix in prefix_list) {
         col_name <- paste0(prefix, year)
         if (rank_orders[prefix] == "asc") {
-          data <- data %>%
+          data <- data |> 
             mutate(!!sym(col_name) := rank(!!sym(col_name), ties.method = "first"))
         } else {
-          data <- data %>%
+          data <- data |> 
             mutate(!!sym(col_name) := rank(-!!sym(col_name), ties.method = "first"))
         }
       }
@@ -1236,19 +1298,19 @@ footer = tagList(
       }), collapse = " + ")
       
       
-      data <- data %>%
+      data <- data |> 
         mutate(!!sym(col_name) := eval(parse(text = formula)))
       
     }
     
     # Select the relevant columns (ID and Index columns)
-    result <- data %>%
+    result <- data |> 
       select(all_of(id_var), starts_with("Index"))
     
     # Remove "Index" from column names
     colnames(result) <- sub("Index", "", colnames(result))
     
-    # Further data processing for club analysis
+    # Prepare data for club analysis
     logData <- log(result[,-1])
     filteredData <- apply(logData, 1, function(x) {
       mFilter::hpfilter(x, freq = 400, type = "lambda")$trend
@@ -1264,7 +1326,7 @@ footer = tagList(
     
     clubs <- findClubs(filteredData, dataCols = dataCols, unit_names = 1, refCol = end_year - start_year + 2, time_trim = 1/3, cstar = 0, HACmethod = 'FQSB')
     
-    # Update the view choice UI
+    # Update the view choice UI of View All clubs or Specific
     output$view_choice_ui <- renderUI({
       fluidRow(
         column(6,
@@ -1279,6 +1341,17 @@ footer = tagList(
       )
     })
     
+    
+    # Render the plot or print the results option
+    output$index_club_analysis_result <- renderUI({
+      req(input$result_choice)  
+      if (input$result_choice == "plot") {
+        plotOutput("plot_clubs", height = "600px")
+      } else {
+        verbatimTextOutput("print_clubs")
+      }
+    })
+    
     # Update the result choice UI
     output$select_result_ui <- renderUI({
       fluidRow(
@@ -1288,22 +1361,13 @@ footer = tagList(
       )
     })
     
-    # Render the plot or print the results
-    output$index_club_analysis_result <- renderUI({
-      req(input$result_choice)  # Ensure result_choice is available
-      if (input$result_choice == "plot") {
-        plotOutput("plot_clubs", height = "600px")
-      } else {
-        verbatimTextOutput("print_clubs")
-      }
-    })
-    
-    # Define the logic for rendering the plot and print outputs
+    # Print club
     output$print_clubs <- renderPrint({
       req(clubs)  # Ensure clubs data is available
       print(clubs)
     })
     
+    # Render plot (all & specific)
     output$plot_clubs <- renderPlot({
       req(clubs, input$view_choice, input$start_year, input$end_year)  # Ensure all required inputs are available
       start_year <- as.numeric(input$start_year)
@@ -1319,7 +1383,7 @@ footer = tagList(
           xlabs_dir = 2
         ))
       } else {
-        req(input$club_number)  # Ensure club_number is available
+        req(input$club_number)  
         plot(clubs, clubs = input$club_number, avgTP = FALSE, legend = TRUE, plot_args = list(
           type = 'o',
           xmarks = seq(1, end_year - start_year + 1, 1),
