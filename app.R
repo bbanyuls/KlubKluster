@@ -72,7 +72,7 @@ ui <- dashboardPage(
                menuSubItem("Index Club", tabName = "ik_indexclub")
       ),
       div(style = "position: absolute; bottom: 10px; width: 100%; text-align: left; left: 10px;",
-          tags$a(href = "https://github.com/banyulsbuc3m/KlubApp", target = "_blank",
+          tags$a(href = "https://github.com/bbanyuls/KlubKluster", target = "_blank",
                  tags$i(class = "fa fa-github", style = "font-size: 24px; color: white;"))
       )
     )
