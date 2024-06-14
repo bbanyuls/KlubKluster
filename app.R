@@ -15,7 +15,7 @@ if (!requireNamespace("caret", quietly = TRUE)) install.packages("caret")
 if (!requireNamespace("xgboost", quietly = TRUE)) install.packages("xgboost")
 if (!requireNamespace("cluster", quietly = TRUE)) install.packages("cluster")
 
-# Load the necessary libraries
+# Load the necessary libraries   
 library(shiny)
 library(shinydashboard)
 library(DT)
@@ -106,11 +106,10 @@ ui <- dashboardPage(
               p("The detailed explanations, mathematical formulations, and practical examples provided in each section will guide you through the process of clustering analysis, ensuring you can apply these methodologies to your data effectively.")
       ),
       tabItem(tabName = "general_check",
-              h2("Check the Data Uploaded!"),
               fluidRow(
                 column(width = 6, 
-                       box(title = "Data Table", status = "primary", solidHeader = TRUE, collapsible = TRUE, width = NULL,
-                           DTOutput("check_data"), style = "margin-left: 20px;")),  # Added margin-left
+                       box(title = "Preview Data", status = "primary", solidHeader = TRUE, collapsible = TRUE, width = NULL,
+                           DTOutput("check_data"), style = "margin-left: 20px;")),
                 column(width = 6, 
                        box(title = "Variable Types", status = "primary", solidHeader = TRUE, collapsible = TRUE,
                            DTOutput("dataTypes"), dynamicHeight = TRUE),
@@ -120,14 +119,16 @@ ui <- dashboardPage(
               )
       ),
       tabItem(tabName = "general_references",
-              h2("References"),
+              h2("References:"),
               HTML('
             <ol>
-              <li> link or book 1</li>
-              <li> same here </li>
-              <li> here again too!</li>
+              <li>Wickham, H. (2021). Mastering Shiny. O\'Reilly Media, Inc. <a href="https://mastering-shiny.org/" target="_blank">https://mastering-shiny.org/</a></li>
+              <li>MacQueen, J.B. (1967) Some Methods for Classification and Analysis of Multivariate Observations. In: Proceedings of the 5th Berkeley Symposium on Mathematical Statistics and Probability, Volume 1: Statistics, University of California Press, Berkeley, 281-297. <a href="http://projecteuclid.org/euclid.bsmsp/1200512992" target="_blank">http://projecteuclid.org/euclid.bsmsp/1200512992</a></li>
+              <li>Phillips, P. C. B., and Sul, D. (2007). Transition Modeling and Econometric Convergence Tests. Econometrica, 75(6), 1771–1855. <a href="http://www.jstor.org/stable/4502048" target="_blank">http://www.jstor.org/stable/4502048</a></li>
+              <li>Du, K. (2017). Econometric Convergence Test and Club Clustering Using Stata. The Stata Journal, 17(4), 882–900. <a href="https://doi.org/10.1177/1536867X1801700407" target="_blank">https://doi.org/10.1177/1536867X1801700407</a></li>
+              <li><a href="https://cran.r-project.org/web/packages/ConvergenceClubs/index.html" target="_blank">https://cran.r-project.org/web/packages/ConvergenceClubs/index.html</a></li>
             </ol>
-        '),
+        ')
       ),
       tabItem(tabName = "kmeans_methodology",
               p("There are several algorithms for clustering, but the standard one is the Hartigan-Wong algorithm in which the total variance of the individuals within a cluster is defined as the sum of the squared Euclidean distances between the elements and the corresponding centroid. The centroid of each group is the center of the group that corresponds to the mean value of each individual in that cluster (Hartigan and Wong, 1979)."),
@@ -199,7 +200,7 @@ ui <- dashboardPage(
               ),
               fluidRow(
                 column(6, box(title = "Silhouette Plot", status = "info", solidHeader = TRUE, plotOutput("silhouette_plot"), width = 14, style = "border-top: 10px solid #5bc0de;")),
-                column(6, box(title = "Elbow Method", status = "warning", solidHeader = TRUE, plotOutput("elbow_plot"), width = 14, style = "border-top: 10px solid #f0ad4e;"))
+                column(6, box(title = "Elbow Plot", status = "warning", solidHeader = TRUE, plotOutput("elbow_plot"), width = 14, style = "border-top: 10px solid #f0ad4e;"))
               )
       ),
       tabItem(tabName = "analysis",
@@ -225,11 +226,11 @@ ui <- dashboardPage(
                 )
               ),
               fluidRow(
-                column(6, box(title = "Cluster Analysis Results", status = "info", solidHeader = TRUE, 
+                column(6, box(title = "Cluster Analysis Centroids Results", status = "info", solidHeader = TRUE, 
                               DTOutput("cluster_results"), 
                               downloadButton("download_data", ""),
                               width = 14, style = "border-top: 10px solid #5bc0de;")),
-                column(6, box(title = "Graph", status = "warning", solidHeader = TRUE, width = 14, style = "border-top: 10px solid #f0ad4e;",
+                column(6, box(title = "Visualization", status = "warning", solidHeader = TRUE, width = 14, style = "border-top: 10px solid #f0ad4e;",
                               conditionalPanel(
                                 condition = "input.plot_type == 'custom'",
                                 selectInput("x_var", "Select X Variable", choices = NULL),
@@ -238,10 +239,6 @@ ui <- dashboardPage(
                               plotOutput("cluster_plot")
                 ))
               )
-      ),
-      tabItem(tabName = "clubconvergence",
-              h2("Club Convergence Main"),
-              p("Overview of Club Convergence Analysis.")
       ),
       tabItem(tabName = "cc_methodology",
               p("For the analysis of convergence clubs, we will apply the methodology developed by Phillips and Sul (2007, 2009). This methodology allows us to study the existence of convergence clubs without having to separate our data sample into subgroups through several variables in common."),
@@ -326,7 +323,6 @@ ui <- dashboardPage(
         p("Now that the idea is understood a bit more, let's explain it in more detail. The idea of convergence with all members as a 'group' is called Beta Convergence. In this case, we look at whether, considering all members, they are heading toward the same point, or if they continue as they are, it will eventually happen (i.e., those at the bottom growing faster will eventually catch up with those at the top).")
       ),
       tabItem(tabName = "cc_data_prep",
-              h2("Data Preparation"),
               fluidRow(
                 column(12,
                        box(title = "Preview Data", status = "primary", solidHeader = TRUE, width = NULL,
@@ -337,7 +333,7 @@ ui <- dashboardPage(
                 column(5,
                        box(title = "Reorder Columns", status = "primary", solidHeader = TRUE, width = NULL,
                            uiOutput("reorder_ui"), 
-                           div(style = "margin-top: 20px;",  # Added margin-top
+                           div(style = "margin-top: 20px;",  
                                actionButton("apply_reorder", "Apply Reorder")
                            )
                        )),
@@ -392,7 +388,8 @@ ui <- dashboardPage(
                   width = 12,
                   status = "primary",
                   solidHeader = TRUE,
-                  plotOutput("plot_clubs", height = "600px")
+                  plotOutput("plot_clubs", height = "600px"),
+                  downloadButton("download_cc_results", "", style = "margin-top: 20px;")
                 )
               )
       ),
@@ -451,7 +448,7 @@ ui <- dashboardPage(
                 column(5,
                        box(title = "Reorder Columns", status = "primary", solidHeader = TRUE, width = NULL,
                            uiOutput("reorder_ui_ik"), 
-                           div(style = "margin-top: 20px;",  # Added margin-top
+                           div(style = "margin-top: 20px;", 
                                actionButton("apply_reorder_ik", "Apply Reorder")
                            )
                        )),
@@ -491,7 +488,7 @@ ui <- dashboardPage(
               fluidPage(
                 fluidRow(
                   column(12,
-                         box(width = 12, status = "primary", solidHeader = TRUE,  # Blue border
+                         box(width = 12, status = "primary", solidHeader = TRUE,
                              fluidRow(
                                column(2,
                                       selectInput("id_var_indexclub", "Select ID Variable:", choices = NULL)
@@ -532,9 +529,10 @@ ui <- dashboardPage(
                 ),
                 fluidRow(
                   column(12,
-                         box(width = 12, status = "warning", solidHeader = TRUE,  # Orange border
+                         box(width = 12, status = "warning", solidHeader = TRUE, 
                              fluidRow(
-                               column(12, uiOutput("index_club_analysis_result"))
+                               column(12, uiOutput("index_club_analysis_result")),
+                               column(12, downloadButton("download_ik_results", "", style = "margin-top: 20px;"))
                              )
                          )
                   )
@@ -837,11 +835,11 @@ footer = tagList(
   # Download cluster results
   output$download_data <- downloadHandler(
     filename = function() {
-      paste("cluster-results-", format(Sys.time(), "%Y-%m-%d-%H%M"), ".csv", sep = "")
+      paste("cluster-results-", format(Sys.time(), "%Y-%m-%d-%H%M"), ".xlsx", sep = "")
     },
     content = function(file) {
       req(reactiveData())
-      write.csv(reactiveData(), file, row.names = FALSE)
+      write.xlsx(reactiveData(), file)
     }
   )
   
@@ -935,6 +933,10 @@ footer = tagList(
     
     clubs <- findClubs(filteredData, dataCols = dataCols, unit_names = 1, refCol = end_year - start_year + 2, time_trim = 1/3, cstar = 0, HACmethod = 'FQSB')
     
+    # Generate the results data frame
+    tp <- transition_paths(clubs, output_type = 'data.frame')
+    community_clubs <- tp |>  select(id = unit_name, club_id = club)
+    
     # Print information about clubs
     output$print_clubs <- renderPrint({
       print(clubs)
@@ -966,6 +968,16 @@ footer = tagList(
       estimate_mod_result <- round(estimateMod(H, time_trim = 1/3, HACmethod = "FQSB"), 3)
       print(estimate_mod_result)
     })
+    
+    # Define the download handler
+    output$download_cc_results <- downloadHandler(
+      filename = function() {
+        paste("cc-results-", format(Sys.time(), "%Y-%m-%d-%H%M"), ".xlsx", sep = "")
+      },
+      content = function(file) {
+        write.xlsx(community_clubs, file)
+      }
+    )
   })
   
   # Index Klub Preparation tab logic
@@ -1326,6 +1338,12 @@ footer = tagList(
     
     clubs <- findClubs(filteredData, dataCols = dataCols, unit_names = 1, refCol = end_year - start_year + 2, time_trim = 1/3, cstar = 0, HACmethod = 'FQSB')
     
+    
+    # Generate the results data frame
+    tp <- transition_paths(clubs, output_type = 'data.frame')
+    community_clubs <- tp |>  select(id = unit_name, club_id = club)
+    
+    
     # Update the view choice UI of View All clubs or Specific
     output$view_choice_ui <- renderUI({
       fluidRow(
@@ -1392,6 +1410,16 @@ footer = tagList(
         ))
       }
     })
+    
+    # Define the download handler
+    output$download_ik_results <- downloadHandler(
+      filename = function() {
+        paste("kindex-results-", format(Sys.time(), "%Y-%m-%d-%H%M"), ".xlsx", sep = "")
+      },
+      content = function(file) {
+        write.xlsx(community_clubs, file)
+      }
+    )
     
   })
 }
