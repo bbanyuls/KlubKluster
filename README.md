@@ -15,5 +15,7 @@ Further explanation on how to use the app can be found in the app itself. It can
 ## Tutorial (Video)
 
 A simple video tutorial can be seen in the following [link](https://www.youtube.com/watch?v=4AAVf3vzgS4). 
+
 It is 10 minutes long. 
-Soon will be updated to a shorter and clearer version.
+
+Soon, it will be updated to a shorter and clearer version.
